@@ -6,7 +6,7 @@ import api from '../../services/api';
 
 import Logo from '../../img/logo-github.svg';
 
-import { Title, Form, Repositories } from './style';
+import { Title, Form, Repositories, Error } from './style';
 
 import { toast } from 'react-toastify';
 
@@ -22,10 +22,18 @@ interface Repository {
 const Home: React.FC = () => {
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [newRepo, setNewRepo] = useState('');
+  const [inputError, setInputError] = useState('');
 
   async function handleAddRepository(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    // add novos repositorios
+    setInputError('');
+
+    if(!newRepo) {
+      setInputError('Digite o nome do repositório');
+      toast.error('Este campo está vazio');
+      return;
+    }
+    
     try {
     const response = await api.get(`repos/${newRepo}`);
     const repository = response.data;
@@ -35,7 +43,7 @@ const Home: React.FC = () => {
       setRepositories([...repositories, repository]);
       toast.success('Diretório adicionado com sucesso!!!');
     } else {
-      throw new Error();
+      throw inputError;
     }
 
     setNewRepo('');
@@ -50,7 +58,7 @@ const Home: React.FC = () => {
     <>
       <img src={Logo} alt="Logo App" />
       <Title>Encontre repositórios no GitHub</Title>
-      <Form onSubmit={handleAddRepository} >
+      <Form onSubmit={handleAddRepository} hasError={!!inputError} >
         <input 
           type="text" 
           name="" 
@@ -62,6 +70,7 @@ const Home: React.FC = () => {
           Pesquisar
         </button>
       </Form>
+      { inputError && <Error>{inputError}</Error>}
       <Repositories>
         {repositories.map(repository => (
           <Link key={repository.full_name} to="/repo">
