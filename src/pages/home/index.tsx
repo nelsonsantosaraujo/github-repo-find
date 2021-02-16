@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from 'react';
+import React, { useState, useEffect, FormEvent } from 'react';
 import { Link } from 'react-router-dom'
 import { FiChevronRight } from 'react-icons/fi';
 
@@ -20,13 +20,24 @@ interface Repository {
 }
 
 const Home: React.FC = () => {
-  const [repositories, setRepositories] = useState<Repository[]>([]);
   const [newRepo, setNewRepo] = useState('');
   const [inputError, setInputError] = useState('');
+  const [repositories, setRepositories] = useState<Repository[]>(() => {
+    const storageRepositories = localStorage.getItem('@githubexplorer');
+
+    if(storageRepositories){
+      return JSON.parse(storageRepositories);
+    } else {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('@githubexplorer', JSON.stringify(repositories))
+  }, [repositories]);
 
   async function handleAddRepository(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setInputError('');
 
     if(!newRepo) {
       setInputError('Digite o nome do repositório');
@@ -38,7 +49,7 @@ const Home: React.FC = () => {
     const response = await api.get(`repos/${newRepo}`);
     const repository = response.data;
     const repositoryFound = repositories.find(repo => repo.full_name === repository.full_name);
-    console.log(repositoryFound);
+    setInputError('');
     if(!repositoryFound) {
       setRepositories([...repositories, repository]);
       toast.success('Diretório adicionado com sucesso!!!');
@@ -73,7 +84,7 @@ const Home: React.FC = () => {
       { inputError && <Error>{inputError}</Error>}
       <Repositories>
         {repositories.map(repository => (
-          <Link key={repository.full_name} to="/repo">
+          <Link key={repository.full_name} to="/repository">
             <img src={repository.owner.avatar_url} alt={repository.owner.login}/>
             <div>
               <strong>{repository.owner.login}</strong>
